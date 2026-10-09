@@ -19,7 +19,7 @@ standard library functions (`opendir`, `readdir`, `lstat`, `stat`,
 
 ```bash
 make            # build ./myls
-make debug      # build with -g, AddressSanitizer and UBSan
+make debug      # build with -g, AddressSanitizer and UBSan (Linux only)
 make test       # compare ./myls with the system ls
 make clean      # remove binaries and object files
 ```
@@ -126,8 +126,23 @@ Manual commands:
   only when output is a terminal.
 - Sorting compares whole seconds only (no nanosecond tie-break).
 
-## 8. Conclusion
+## 8. Bonus Features (beyond the manual)
+
+These are extras that do not change any behaviour required by the manual
+(all of them are off or invisible when the output is not a terminal, so
+`make test` still compares byte for byte with the system `ls`).
+
+| Feature | What it does | Where |
+|---------|--------------|-------|
+| Multi-column output | On a terminal the listing is packed into columns, filled top to bottom, using `ioctl(TIOCGWINSZ)` (then `$COLUMNS`, then 80) and UTF-8 aware width (`wcswidth`). `-C` forces it, `-1` turns it off, `-l`/`-n` always win. | `src/columns.c` |
+| `-G` colour | Names coloured by type with ANSI escapes (directory, symlink, executable, FIFO, socket, device). Colour codes are never counted in the column width. | `src/display.c` |
+| Write-error detection | `fflush(stdout)`/`ferror()` are checked at exit, so `myls > /dev/full` reports an error and returns 1 instead of pretending to succeed. | `src/main.c` |
+| Assertion tests | `tests/extra_tests.sh` checks real output (sort order for `-S -t -r -u`, "last option wins" pairs, `-F`, `-h`, `-R` headers, exit codes, columns, colour, crash test of every option on `/`, `/dev`, `/etc`, `/proc`). I verified it can fail by deliberately breaking `-r`. | `tests/` |
+| Memory check | `make memcheck` runs valgrind on eight command lines (used because AddressSanitizer refuses to start on NetBSD with ASLR). Also clean under ASan+UBSan on Linux. | `tests/memcheck.sh` |
+| Continuous integration | GitHub Actions builds with `-Werror` and runs both test suites and valgrind on every push. | `.github/workflows/ci.yml` |
+| Manual page | `man ./man/myls.1` | `man/myls.1` |
+## 9. Conclusion
 
 The project covers every option in the assignment manual, is split into
 several modules with headers, builds with `make`, and was tested against the
-system `ls` and with AddressSanitizer.
+system `ls` and with valgrind (make memcheck).

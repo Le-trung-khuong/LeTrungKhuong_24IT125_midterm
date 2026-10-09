@@ -4,10 +4,11 @@ CPPFLAGS = -Iinclude
 
 TARGET = myls
 
-OBJ = src/main.o src/options.o src/list.o src/display.o src/sort.o src/util.o
+OBJ = src/main.o src/options.o src/list.o src/display.o src/sort.o src/util.o \
+      src/columns.o
 
 HDR = include/ls.h include/options.h include/list.h include/display.h \
-      include/sort.h include/util.h
+      include/sort.h include/util.h include/columns.h
 
 all: $(TARGET)
 
@@ -31,5 +32,10 @@ debug:
 
 test: all
 	sh tests/run_tests.sh
+	sh tests/extra_tests.sh
 
-.PHONY: all clean rebuild debug test
+# Memory check (works where AddressSanitizer does not, e.g. NetBSD with ASLR)
+memcheck: all
+	sh tests/memcheck.sh
+
+.PHONY: all clean rebuild debug test memcheck

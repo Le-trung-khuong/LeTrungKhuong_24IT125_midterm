@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include "columns.h"
 #include "display.h"
 #include "list.h"
 #include "sort.h"
@@ -38,17 +39,28 @@ static int should_show(const char *name, const Options *options)
     return 0;
 }
 
+/* Print sorted entries: columns on a terminal, one per line otherwise. */
+static void print_all(const FileEntry *entries, size_t count,
+                      const Options *options, const Widths *widths)
+{
+    size_t i;
+
+    if (count > 0 && use_columns(options)) {
+        print_columns(entries, count, options, widths);
+        return;
+    }
+    for (i = 0; i < count; i++) {
+        print_entry(&entries[i], options, widths);
+    }
+}
+
 void list_entries(FileEntry *entries, size_t count, const Options *options)
 {
     Widths widths;
-    size_t i;
 
     sort_entries(entries, count, options);
     compute_widths(entries, count, options, &widths);
-
-    for (i = 0; i < count; i++) {
-        print_entry(&entries[i], options, &widths);
-    }
+    print_all(entries, count, options, &widths);
 }
 
 /* Read every visible entry of `path` into a freshly allocated array. */
@@ -133,9 +145,7 @@ int list_directory(const char *path, const Options *options,
         Widths widths;
 
         compute_widths(entries, count, options, &widths);
-        for (i = 0; i < count; i++) {
-            print_entry(&entries[i], options, &widths);
-        }
+        print_all(entries, count, options, &widths);
     }
 
     /* -R: descend into sub-directories, never into '.' or '..'. */

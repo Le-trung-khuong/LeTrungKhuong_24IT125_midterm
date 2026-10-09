@@ -17,15 +17,22 @@ void init_options(Options *options)
     options->question = isatty(STDOUT_FILENO) ? 1 : 0;
     options->raw = !options->question;
     options->blocksize = 512UL;
+    options->columns = isatty(STDOUT_FILENO) ? 1 : 0;   /* like real ls */
 }
 
 int parse_options(int argc, char **argv, Options *options)
 {
     int opt;
 
-    while ((opt = getopt(argc, argv, "AacdFfhiklnqRrSstuw")) != -1) {
+    while ((opt = getopt(argc, argv, "1ACacdFfGhiklnqRrSstuw")) != -1) {
         switch (opt) {
         case 'A': options->almost_all = 1; break;
+
+        /* Extensions (not in the manual): -1 one per line, -C columns, -G colour. */
+        case '1': options->columns = 0; break;
+        case 'C': options->columns = 1; break;
+        case 'G': options->color = 1; break;
+
         case 'a': options->all = 1; break;
         case 'F': options->classify = 1; break;
         case 'f': options->no_sort = 1; options->all = 1; break;
@@ -58,7 +65,7 @@ int parse_options(int argc, char **argv, Options *options)
         case 't': options->sort_time = 1; options->sort_size = 0; break;
 
         default:
-            fprintf(stderr, "usage: %s [-AacdFfhiklnqRrSstuw] [file ...]\n",
+            fprintf(stderr, "usage: %s [-1ACacdFfGhiklnqRrSstuw] [file ...]\n",
                     argv[0]);
             return -1;
         }

@@ -20,6 +20,14 @@ void compute_widths(const FileEntry *entries, size_t count,
 void print_entry(const FileEntry *entry, const Options *options,
                  const Widths *widths);
 
+/*
+ * Short-format text of one entry ("inode blocks name"), used by the column
+ * layout. With colored == 0 no escape codes are added, so strlen/width is
+ * the real on-screen width. The caller frees the result.
+ */
+char *format_short(const FileEntry *entry, const Options *options,
+                   const Widths *widths, int colored);
+
 /* Is the "total N" line required for a directory listing? */
 int total_wanted(const Options *options);
 void print_total(const FileEntry *entries, size_t count,

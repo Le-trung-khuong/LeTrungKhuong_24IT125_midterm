@@ -128,5 +128,11 @@ int main(int argc, char **argv)
     free_entries(files, file_count);
     free_entries(dirs, dir_count);
 
+    /* A full disk or closed pipe must not look like success. */
+    if (fflush(stdout) != 0 || ferror(stdout)) {
+        fprintf(stderr, "ls: write error: %s\n", strerror(errno));
+        status = 1;
+    }
+
     return status ? EXIT_FAILURE : EXIT_SUCCESS;
 }

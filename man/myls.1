@@ -1,0 +1,30 @@
+.Dd October 2026
+.Dt MYLS 1
+.Os
+.Sh NAME
+.Nm myls
+.Nd list directory contents (midterm re-implementation of ls)
+.Sh SYNOPSIS
+.Nm
+.Op Fl 1ACGacdFfhiklnqRrSstuw
+.Op Ar file ...
+.Sh DESCRIPTION
+.Nm
+lists files and directories like
+.Xr ls 1 .
+It implements the options
+.Fl AacdFfhiklnqRrSstuw
+from the NetBSD manual, plus the extensions below.
+.Pp
+.Bl -tag -width indent
+.It Fl 1
+One entry per line (default when output is not a terminal).
+.It Fl C
+Multi-column output, filled top to bottom (default on a terminal).
+.It Fl G
+Colour names by file type with ANSI escape codes.
+.El
+.Sh EXIT STATUS
+0 on success, 1 if any operand could not be listed or output failed.
+.Sh SEE ALSO
+.Xr ls 1

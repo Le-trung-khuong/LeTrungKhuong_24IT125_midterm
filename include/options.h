@@ -25,6 +25,8 @@ typedef struct {
     int list_dir;       /* -d  list directories as plain files             */
     int question;       /* -q  non-printable characters shown as '?'       */
     int raw;            /* -w  non-printable characters printed raw        */
+    int columns;        /* -C  multi-column output (default on a tty)      */
+    int color;          /* -G  colour file names by type (extension)       */
     unsigned long blocksize; /* unit used by -s and "total" (512 default)  */
 } Options;
 

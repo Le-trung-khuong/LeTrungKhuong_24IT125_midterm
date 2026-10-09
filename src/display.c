@@ -188,6 +188,51 @@ static void print_link_target(const char *path, const Options *options)
     }
 }
 
+/* ANSI colour for -G, chosen from the file type; "" means no colour. */
+static const char *color_for(mode_t mode)
+{
+    if (S_ISDIR(mode))  return "\033[1;34m";
+    if (S_ISLNK(mode))  return "\033[1;36m";
+    if (S_ISSOCK(mode)) return "\033[1;35m";
+    if (S_ISFIFO(mode)) return "\033[33m";
+    if (S_ISCHR(mode) || S_ISBLK(mode)) return "\033[1;33m";
+    if (S_ISREG(mode) && (mode & (S_IXUSR | S_IXGRP | S_IXOTH))) {
+        return "\033[1;32m";
+    }
+    return "";
+}
+
+/*
+ * Name of an entry as shown to the user: printable name, optional -F suffix,
+ * and (when `colored`) the -G colour codes. Caller frees the result.
+ */
+static char *format_name(const FileEntry *entry, const Options *options,
+                         int colored)
+{
+    char *name = printable_name(entry->name, options);
+    char suffix[2] = { '\0', '\0' };
+    const char *color = "";
+    size_t size;
+    char *result;
+
+    if (options->classify) {
+        suffix[0] = classify_char(entry->st.st_mode);
+    }
+    if (colored && options->color) {
+        color = color_for(entry->st.st_mode);
+    }
+
+    size = strlen(name) + strlen(suffix) + 2 * strlen(color) + 8;
+    result = xmalloc(size);
+    if (color[0] != '\0') {
+        snprintf(result, size, "%s%s\033[0m%s", color, name, suffix);
+    } else {
+        snprintf(result, size, "%s%s", name, suffix);
+    }
+    free(name);
+    return result;
+}
+
 /* ---------- public functions ---------- */
 
 static int wider(int current, const char *text)
@@ -237,7 +282,6 @@ void print_entry(const FileEntry *entry, const Options *options,
     char buf[FIELD];
     char name_buf[256];
     char *name;
-    char suffix;
 
     if (options->inode) {
         fmt_inode(buf, sizeof(buf), st);
@@ -270,16 +314,9 @@ void print_entry(const FileEntry *entry, const Options *options,
         printf("%s ", name_buf);
     }
 
-    name = printable_name(entry->name, options);
+    name = format_name(entry, options, 1);
     fputs(name, stdout);
     free(name);
-
-    if (options->classify) {
-        suffix = classify_char(st->st_mode);
-        if (suffix != '\0') {
-            putchar(suffix);
-        }
-    }
 
     if (options->long_format && S_ISLNK(st->st_mode)) {
         print_link_target(entry->path, options);
@@ -308,4 +345,35 @@ void print_total(const FileEntry *entries, size_t count, const Options *options)
     }
     fmt_blocks(buf, sizeof(buf), sum_blocks, sum_size, options);
     printf("total %s\n", buf);
+}
+
+/* Prefix (inode, blocks) + name of one entry, without colour codes. */
+char *format_short(const FileEntry *entry, const Options *options,
+                   const Widths *widths, int colored)
+{
+    const struct stat *st = &entry->st;
+    char buf[FIELD];
+    char prefix[2 * FIELD + 4];
+    char *name = format_name(entry, options, colored);
+    char *result;
+    size_t used = 0;
+
+    prefix[0] = '\0';
+    if (options->inode) {
+        fmt_inode(buf, sizeof(buf), st);
+        used += (size_t)snprintf(prefix + used, sizeof(prefix) - used,
+                                 "%*s ", widths->inode, buf);
+    }
+    if (options->blocks) {
+        fmt_blocks(buf, sizeof(buf), (unsigned long long)st->st_blocks,
+                   (unsigned long long)st->st_size, options);
+        snprintf(prefix + used, sizeof(prefix) - used, "%*s ",
+                 widths->blocks, buf);
+    }
+
+    result = xmalloc(strlen(prefix) + strlen(name) + 1);
+    strcpy(result, prefix);
+    strcat(result, name);
+    free(name);
+    return result;
 }

@@ -1,0 +1,15 @@
+name: build-and-test
+on: [push, pull_request]
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build with warnings as errors
+        run: make CFLAGS="-Wall -Wextra -Werror -std=gnu99 -O2"
+      - name: Compare with GNU ls and run assertion tests
+        run: make test
+      - name: Memory check
+        run: |
+          sudo apt-get update && sudo apt-get install -y valgrind
+          make memcheck

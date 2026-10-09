@@ -26,3 +26,4 @@ Thumbs.db
 # patch leftovers
 *.orig
 *.rej
+build.log
