@@ -72,7 +72,14 @@ cd "$TMP" || exit 1
 
 # -a and -A (the super-user always gets -A, so only check what holds for both)
 my -1a t | grep -q '^\.hidden$' && ok "-a lists .hidden" || bad "-a lists .hidden"
-my -1a t | grep -q '^\.\.$' ; if [ "$(id -u)" = 0 ]; then ok "root: -a does not need '..' (-A implied)"; else [ $? = 0 ] && ok "-a lists .." || bad "-a lists .."; fi
+# the super-user always gets -A, so '..' is only expected for other users
+if [ "$(id -u)" = 0 ]; then
+    ok "root: -a does not need '..' (-A implied)"
+elif my -1a t | grep -q '^\.\.$'; then
+    ok "-a lists .."
+else
+    bad "-a lists .."
+fi
 
 # ---- options that cancel each other: the LAST one wins ----
 same "-ln"  "-n"
